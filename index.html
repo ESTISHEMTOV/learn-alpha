@@ -38,8 +38,11 @@
 
   /* ---------- Screens ---------- */
   .screen{ flex:1; display:none; flex-direction:column; align-items:center;
-    justify-content:safe center; padding:12px; text-align:center;
+    justify-content:flex-start; padding:12px; text-align:center;
     overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  /* Flexible spacers center the content when it fits, and collapse to 0 when it
+     overflows — so the top item is always reachable (works in every browser). */
+  .screen.active::before, .screen.active::after{ content:""; flex:1 0 0; }
   .screen.active{ display:flex; animation:pop .35s ease; }
   @keyframes pop{ from{opacity:0; transform:scale(.9)} to{opacity:1; transform:scale(1)} }
 
