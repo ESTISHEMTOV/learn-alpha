@@ -468,6 +468,14 @@ function happySound(){ tone(523,0,0.15); tone(659,0.12,0.15); tone(784,0.24,0.25
 function ohNoSound(){ tone(300,0,0.18,"triangle"); tone(220,0.16,0.25,"triangle"); }
 function clickSound(){ tone(660,0,0.08,"triangle"); } // soft tap feedback (always works)
 
+// Spoken feedback for a child who can't read: play a random Hebrew clip
+// ("try again" / "well done"). Falls back to a tone if clips are unavailable.
+function playFx(kind){
+  const arr = (typeof AUDIO !== "undefined" && AUDIO.fx) ? AUDIO.fx[kind] : null;
+  if (arr && arr.length){ playClips([arr[randInt(arr.length)]]); return true; }
+  return false;
+}
+
 // Some browsers drop the very first speech utterance. Warm the engine up once
 // on the first user gesture with a silent-ish empty utterance.
 let speechPrimed = false;
@@ -580,11 +588,11 @@ function guessG1(it, btn){
     g1Lock = true;
     btn.classList.add("correct");
     const won = addPoint();
-    if (!won){ happySound(); celebrate(); }
-    setTimeout(nextGame1, won ? 3200 : 1300);
+    if (!won){ happySound(); celebrate(); playFx("right"); }
+    setTimeout(nextGame1, won ? 3200 : 1600);
   } else {
     btn.classList.add("wrong");
-    ohNoSound();
+    if (!playFx("wrong")) ohNoSound();   // SAY "try again" out loud (child can't read)
     setTimeout(() => btn.classList.remove("wrong"), 450);
   }
 }
@@ -624,7 +632,7 @@ function guessG2(it, btn){
     setTimeout(nextGame2, won ? 3600 : 1900);
   } else {
     btn.classList.add("wrong");
-    ohNoSound();
+    if (!playFx("wrong")) ohNoSound();   // SAY "try again" out loud
     setTimeout(() => btn.classList.remove("wrong"), 450);
   }
 }
@@ -639,7 +647,9 @@ const SPOKEN_OK = {
   "ג":["גימל","גימ","גימא","גמל"], "ד":["דלת","דלית","דלד"],
   "ה":["הא","הה","הי","היי"], "ו":["וו","ואו","וב","וואו"],
   "ז":["זין","זיין","זהין"], "ח":["חית","חת","חיט","חיית"],
-  "ט":["טית","טת","טיט","טט"], "י":["יוד","יוט","יודי"],
+  // ט and ת are homophones (both /t/), so recognition often returns ת-spellings.
+  "ט":["טית","טת","טיט","טט","תית","תת","תיט","טי","טיי","תי","תיי","טאית","תאית"],
+  "י":["יוד","יוט","יודי","יוד","יוט"],
   "כ":["כף","כאף","קף","כב"], "ל":["למד","לאמד","למאד"],
   "מ":["מם","ממ","מים","ממה"], "נ":["נון","נו","נן","נונה"],
   "ס":["סמך","סמח","סמק"], "ע":["עין","אין","עיין"],
@@ -759,13 +769,14 @@ function handleG3Result(alts){
   } else {
     const heard = normHeb(alts[0]) || "…";
     g3Status.textContent = "שמעתי “" + heard + "” — כמעט! נסי שוב 🔁";
+    if (!playFx("wrong")) ohNoSound();   // SAY "try again" out loud
   }
 }
 function correctG3(){
   const won = addPoint();
-  if (!won){ happySound(); celebrate(); }
+  if (!won){ happySound(); celebrate(); playFx("right"); }
   g3Status.textContent = "כל הכבוד! 🎉";
-  setTimeout(nextGame3, won ? 3400 : 1500);
+  setTimeout(nextGame3, won ? 3400 : 1600);
 }
 g3Mic.onclick = () => { ac(); listenG3(); };
 document.getElementById("g3Hint").onclick = () => { ac(); sayLetter(g3Item); };
