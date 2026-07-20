@@ -158,31 +158,6 @@
   }
   .tr-points{ font-size:clamp(20px,5vw,26px); font-weight:800; color:#ff6ba6; margin-top:12px; }
 
-  /* ---------- Game 3: say the letter ---------- */
-  .g3-letter{
-    font-size:clamp(120px,34vw,220px); line-height:1; font-weight:800; color:var(--purple);
-    background:#fff; border-radius:36px; padding:6px 40px; margin:6px 0 14px;
-    box-shadow:0 12px 30px rgba(0,0,0,.15);
-  }
-  .mic-mini{
-    margin-top:20px; border:none; background:#fff; color:var(--red); border-radius:20px;
-    padding:10px 18px; font-size:clamp(14px,3.6vw,18px); font-family:inherit; font-weight:700;
-    cursor:pointer; box-shadow:0 4px 0 #e2b8c4;
-  }
-  .mic-mini:active{ transform:translateY(2px); box-shadow:0 2px 0 #e2b8c4; }
-  .mic-mini.listening{ background:#06d6a0; color:#fff; box-shadow:0 4px 0 #05a97e;
-    animation:micPulse .9s ease-in-out infinite; }
-  @keyframes micPulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
-  .g3-status{ font-size:clamp(18px,4.6vw,24px); font-weight:700; margin:14px 0 6px; min-height:1.4em; }
-  .g3-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
-  .g3-act{
-    border:none; background:#fff; border-radius:20px; padding:10px 16px;
-    font-size:clamp(15px,3.8vw,20px); font-family:inherit; font-weight:700; cursor:pointer;
-    box-shadow:0 4px 0 #d9cfeb; color:#3a2d5c;
-  }
-  .g3-act:active{ transform:translateY(2px); box-shadow:0 2px 0 #d9cfeb; }
-  .g3-act.g3-know{ background:var(--green); color:#fff; box-shadow:0 4px 0 #3da97a; }
-
   /* ---------- Championship overlay ---------- */
   .champ{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center;
@@ -229,9 +204,6 @@
       <button class="big-btn" style="background:var(--orange)" data-go="game2">
         <span class="em">🖼️</span> משחק: איזו אות ראשונה?
       </button>
-      <button class="big-btn" style="background:var(--red)" data-go="game3">
-        <span class="em">🎤</span> משחק: תגידי את האות
-      </button>
       <button class="big-btn" style="background:var(--purple)" data-go="trophies">
         <span class="em">🏆</span> האליפות שלי
         <span class="menu-badge" id="menuBadge">🏆 0 · ⭐ 0</span>
@@ -272,19 +244,6 @@
     <div class="game-hero" id="g2Pic">🦁</div>
     <button class="replay-btn" id="g2Replay">🔊 שמע את המילה</button>
     <div class="options" id="g2Opts"></div>
-  </section>
-
-  <!-- GAME 3: see a letter, SAY it out loud, self-check (mic optional) -->
-  <section class="screen" id="screen-game3">
-    <div class="game-prompt">🗣️ תגידי בקול: איזו אות זו?</div>
-    <div class="g3-letter" id="g3Letter">א</div>
-    <div class="g3-status" id="g3Status">אמרת בקול? כל הכבוד! עכשיו בדקי את עצמך 👇</div>
-    <div class="g3-actions">
-      <button class="g3-act g3-know" id="g3Know">✅ ידעתי!</button>
-      <button class="g3-act" id="g3Hint">🔊 מה האות?</button>
-      <button class="g3-act" id="g3Skip">➡️ אות הבאה</button>
-    </div>
-    <button class="mic-mini" id="g3Mic">🎤 לבדיקה עם המיקרופון</button>
   </section>
 
   <!-- TROPHIES -->
@@ -490,14 +449,11 @@ const screens = document.querySelectorAll(".screen");
 function show(id){
   screens.forEach(s => s.classList.toggle("active", s.id === "screen-" + id));
   stopClips();
-  stopRecognition();
-  if (id !== "game3") releaseMic();
   if (window.speechSynthesis) speechSynthesis.cancel();
   if (id === "learn") renderLearn();
   if (id === "grid")  renderGrid();
   if (id === "game1") startGame1();
   if (id === "game2") startGame2();
-  if (id === "game3") startGame3();
   if (id === "trophies") renderTrophies();
   updateScoreUI(false);
 }
@@ -646,172 +602,6 @@ function guessG2(it, btn){
   }
 }
 document.getElementById("g2Replay").onclick = () => { ac(); sayWord(g2Answer); };
-
-/* ================= GAME 3: see a letter -> SAY it ================= */
-// Accepted spoken answers per letter (normalized: nikud/spaces/punct removed).
-// A young child saying a single Hebrew letter name is recognized imperfectly,
-// so we accept the letter name plus common near-misses.
-const SPOKEN_OK = {
-  "א":["אלף","אלפ","אלב","אלאף"], "ב":["בית","בת","בטה","בים"],
-  "ג":["גימל","גימ","גימא","גמל"], "ד":["דלת","דלית","דלד"],
-  "ה":["הא","הה","הי","היי"], "ו":["וו","ואו","וב","וואו"],
-  "ז":["זין","זיין","זהין"], "ח":["חית","חת","חיט","חיית"],
-  // ט and ת are homophones (both /t/), so recognition often returns ת-spellings.
-  "ט":["טית","טת","טיט","טט","תית","תת","תיט","טי","טיי","תי","תיי","טאית","תאית"],
-  "י":["יוד","יוט","יודי","יוד","יוט"],
-  "כ":["כף","כאף","קף","כב"], "ל":["למד","לאמד","למאד"],
-  "מ":["מם","ממ","מים","ממה"], "נ":["נון","נו","נן","נונה"],
-  "ס":["סמך","סמח","סמק"], "ע":["עין","אין","עיין"],
-  "פ":["פא","פה","פי","פיי"], "צ":["צדי","צדיק","צדיי","צאדי"],
-  "ק":["קוף","קוב","קוו","קופ"], "ר":["ריש","רש","רייש","ראש"],
-  "ש":["שין","שן","שיין"], "ת":["תו","תיו","תב","תיב","תאו"]
-};
-function normHeb(s){
-  return (s || "").replace(/[֑-ׇ]/g, "")   // strip nikud/te'amim
-                  .replace(/[^א-ת]/g, "");  // keep only Hebrew letters
-}
-function spokenMatches(letter, said){
-  const n = normHeb(said);
-  if (!n) return false;
-  if (n === letter) return true;
-  const cands = (SPOKEN_OK[letter] || []).concat([normHeb(LETTER_NAME[letter])]);
-  return cands.some(c => c && (n === c || n.includes(c) || c.includes(n)));
-}
-
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recogOK = !!SR;
-let recog = null, micDenied = false, g3Listening = false, g3Item = null, g3Got = false;
-const g3LetterEl = document.getElementById("g3Letter");
-const g3Mic = document.getElementById("g3Mic");
-const g3Status = document.getElementById("g3Status");
-
-function g3Active(){ return document.getElementById("screen-game3").classList.contains("active"); }
-// "Didn't get it" feedback — always AUDIBLE (child can't read the text).
-function g3Retry(msg){
-  g3Status.textContent = msg;
-  if (!playFx("wrong")) ohNoSound();
-}
-
-function getRecog(){
-  if (!SR) return null;
-  if (recog) return recog;
-  recog = new SR();
-  recog.lang = "he-IL";
-  recog.interimResults = false;
-  recog.maxAlternatives = 6;
-  recog.continuous = false;
-  recog.onstart = () => { g3Got = false; };
-  recog.onresult = (e) => {
-    g3Got = true;
-    const alts = [];
-    for (let i = 0; i < e.results.length; i++){
-      const r = e.results[i];
-      for (let j = 0; j < r.length; j++) alts.push(r[j].transcript);
-    }
-    handleG3Result(alts);
-  };
-  recog.onnomatch = () => { g3Got = true; if (g3Active()) g3Retry("לא הבנתי 🙉 נסי שוב"); };
-  recog.onerror = (e) => {
-    g3Got = true;
-    g3Listening = false; g3Mic.classList.remove("listening");
-    if (e.error === "aborted") return;                       // we stopped it on purpose
-    if (e.error === "not-allowed" || e.error === "service-not-allowed"){
-      micDenied = true;
-      g3Status.textContent = "🎤 המיקרופון חסום — תגידי בקול ולחצי ✅ ידעתי";
-      return;
-    }
-    if (!g3Active()) return;
-    if (e.error === "network"){
-      g3Status.textContent = "אין חיבור לזיהוי 📡 אפשר ללחוץ ✅ ידעתי";
-    } else {
-      g3Retry("לא שמעתי 🙉 נסי שוב");                          // no-speech, audio-capture, etc.
-    }
-  };
-  // If recognition ended without ANY result/error, still respond audibly.
-  recog.onend = () => {
-    g3Listening = false; g3Mic.classList.remove("listening");
-    if (!g3Got && g3Active()) g3Retry("לא שמעתי 🙉 נסי שוב");
-  };
-  return recog;
-}
-function stopRecognition(){
-  if (recog && g3Listening){ try{ recog.abort(); }catch(e){} }
-  g3Listening = false;
-  if (g3Mic) g3Mic.classList.remove("listening");
-}
-
-// Hold one microphone stream open for the whole game session. On file:// the
-// browser treats the speech-mic permission as ephemeral and re-prompts on every
-// recognition.start(); keeping a live getUserMedia stream keeps the permission
-// "active" so the child is asked only once (when she enters the game).
-let micStream = null, micAsked = false;
-function ensureMic(){
-  if (micStream || micDenied) return Promise.resolve(!!micStream || !micDenied);
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.resolve(true);
-  micAsked = true;
-  return navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(s => { micStream = s; return true; })
-    .catch(() => {
-      micDenied = true;
-      g3Status.textContent = "🎤 המיקרופון חסום — תגידי בקול ולחצי ✅ ידעתי";
-      return false;
-    });
-}
-function releaseMic(){
-  if (micStream){ try{ micStream.getTracks().forEach(t => t.stop()); }catch(e){} micStream = null; }
-}
-
-// No microphone is requested automatically — the game works purely as
-// say-aloud + self-check, so there is never a permission prompt unless the
-// child explicitly taps the optional "🎤 בדיקה עם המיקרופון" button.
-function startGame3(){ nextGame3(); }
-function nextGame3(){
-  stopRecognition();
-  g3Item = LETTERS[randInt(LETTERS.length)];
-  g3LetterEl.textContent = g3Item.l;
-  g3LetterEl.style.color = COLORS[randInt(COLORS.length)];
-  g3Status.textContent = "אמרת בקול? כל הכבוד! עכשיו בדקי את עצמך 👇";
-  if (!recogOK) g3Mic.style.display = "none";
-}
-function listenG3(){
-  if (!recogOK || micDenied){ sayLetter(g3Item); return; }
-  if (g3Listening){ stopRecognition(); return; }
-  ensureMic().then(ok => {
-    if (!ok) return;
-    const r = getRecog();
-    if (!r) return;
-    try{
-      g3Got = false;
-      g3Listening = true;
-      g3Mic.classList.add("listening");
-      g3Status.textContent = "אני מקשיבה... 🎧 תגידי!";
-      r.start();
-    }catch(e){
-      g3Listening = false; g3Mic.classList.remove("listening");
-      g3Retry("רגע... נסי שוב 🎤");
-    }
-  });
-}
-function handleG3Result(alts){
-  g3Listening = false; g3Mic.classList.remove("listening");
-  if (alts.some(a => spokenMatches(g3Item.l, a))){
-    correctG3();
-  } else {
-    const heard = normHeb(alts[0]) || "…";
-    g3Status.textContent = "שמעתי “" + heard + "” — כמעט! נסי שוב 🔁";
-    if (!playFx("wrong")) ohNoSound();   // SAY "try again" out loud
-  }
-}
-function correctG3(){
-  const won = addPoint();
-  if (!won){ happySound(); celebrate(); playFx("right"); }
-  g3Status.textContent = "כל הכבוד! 🎉";
-  setTimeout(nextGame3, won ? 3400 : 1600);
-}
-g3Mic.onclick = () => { ac(); listenG3(); };
-document.getElementById("g3Hint").onclick = () => { ac(); sayLetter(g3Item); };
-document.getElementById("g3Know").onclick = () => { ac(); stopRecognition(); correctG3(); };
-document.getElementById("g3Skip").onclick = () => { ac(); clickSound(); nextGame3(); };
 
 /* ================= SCORE & TROPHIES ================= */
 const GOAL = 100; // points per trophy
