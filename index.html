@@ -671,10 +671,17 @@ function spokenMatches(letter, said){
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recogOK = !!SR;
-let recog = null, micDenied = false, g3Listening = false, g3Item = null;
+let recog = null, micDenied = false, g3Listening = false, g3Item = null, g3Got = false;
 const g3LetterEl = document.getElementById("g3Letter");
 const g3Mic = document.getElementById("g3Mic");
 const g3Status = document.getElementById("g3Status");
+
+function g3Active(){ return document.getElementById("screen-game3").classList.contains("active"); }
+// "Didn't get it" feedback — always AUDIBLE (child can't read the text).
+function g3Retry(msg){
+  g3Status.textContent = msg;
+  if (!playFx("wrong")) ohNoSound();
+}
 
 function getRecog(){
   if (!SR) return null;
@@ -684,7 +691,9 @@ function getRecog(){
   recog.interimResults = false;
   recog.maxAlternatives = 6;
   recog.continuous = false;
+  recog.onstart = () => { g3Got = false; };
   recog.onresult = (e) => {
+    g3Got = true;
     const alts = [];
     for (let i = 0; i < e.results.length; i++){
       const r = e.results[i];
@@ -692,20 +701,28 @@ function getRecog(){
     }
     handleG3Result(alts);
   };
+  recog.onnomatch = () => { g3Got = true; if (g3Active()) g3Retry("לא הבנתי 🙉 נסי שוב"); };
   recog.onerror = (e) => {
+    g3Got = true;
     g3Listening = false; g3Mic.classList.remove("listening");
+    if (e.error === "aborted") return;                       // we stopped it on purpose
     if (e.error === "not-allowed" || e.error === "service-not-allowed"){
       micDenied = true;
       g3Status.textContent = "🎤 המיקרופון חסום — תגידי בקול ולחצי ✅ ידעתי";
-    } else if (e.error === "no-speech"){
-      g3Status.textContent = "לא שמעתי 🙉 נסי שוב — לחצי על המיקרופון";
-    } else if (e.error === "network"){
+      return;
+    }
+    if (!g3Active()) return;
+    if (e.error === "network"){
       g3Status.textContent = "אין חיבור לזיהוי 📡 אפשר ללחוץ ✅ ידעתי";
     } else {
-      g3Status.textContent = "נסי שוב 🎤";
+      g3Retry("לא שמעתי 🙉 נסי שוב");                          // no-speech, audio-capture, etc.
     }
   };
-  recog.onend = () => { g3Listening = false; g3Mic.classList.remove("listening"); };
+  // If recognition ended without ANY result/error, still respond audibly.
+  recog.onend = () => {
+    g3Listening = false; g3Mic.classList.remove("listening");
+    if (!g3Got && g3Active()) g3Retry("לא שמעתי 🙉 נסי שוב");
+  };
   return recog;
 }
 function stopRecognition(){
@@ -755,11 +772,15 @@ function listenG3(){
     const r = getRecog();
     if (!r) return;
     try{
+      g3Got = false;
       g3Listening = true;
       g3Mic.classList.add("listening");
       g3Status.textContent = "אני מקשיבה... 🎧 תגידי!";
       r.start();
-    }catch(e){ g3Listening = false; g3Mic.classList.remove("listening"); }
+    }catch(e){
+      g3Listening = false; g3Mic.classList.remove("listening");
+      g3Retry("רגע... נסי שוב 🎤");
+    }
   });
 }
 function handleG3Result(alts){
