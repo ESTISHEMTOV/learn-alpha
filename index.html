@@ -627,9 +627,17 @@ function guessG2(it, btn){
     g2Lock = true;
     btn.classList.add("correct");
     const won = addPoint();
-    // Only "כל הכבוד" (mom's voice) — no repeating the letter or word.
-    if (!won){ happySound(); celebrate(); playFx("right"); }
-    setTimeout(nextGame2, won ? 3600 : 1800);
+    // Say the letter NAME first, then "כל הכבוד" (mom's voice).
+    if (!won){
+      happySound(); celebrate();
+      const seq = [];
+      const n = clipName(g2Answer.l);
+      if (n) seq.push(n);
+      if (AUDIO.fx && AUDIO.fx.right && AUDIO.fx.right.length)
+        seq.push(AUDIO.fx.right[randInt(AUDIO.fx.right.length)]);
+      if (seq.length) playClips(seq); else playFx("right");
+    }
+    setTimeout(nextGame2, won ? 3600 : 2600);
   } else {
     btn.classList.add("wrong");
     if (!playFx("wrong")) ohNoSound();   // SAY "try again" out loud
