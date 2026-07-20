@@ -627,9 +627,18 @@ function guessG2(it, btn){
     g2Lock = true;
     btn.classList.add("correct");
     const won = addPoint();
-    if (!won){ happySound(); celebrate(); }
-    sayStartsWith(g2Answer);
-    setTimeout(nextGame2, won ? 3600 : 1900);
+    if (!won){
+      happySound(); celebrate();
+      // Say "כל הכבוד" (mom's voice) first, then reinforce with the word + its letter.
+      const seq = [];
+      if (AUDIO.fx && AUDIO.fx.right && AUDIO.fx.right.length)
+        seq.push(AUDIO.fx.right[randInt(AUDIO.fx.right.length)]);
+      const w = clipWord(g2Answer.l), n = clipName(g2Answer.l);
+      if (w) seq.push(w);
+      if (n) seq.push(n);
+      if (seq.length) playClips(seq); else sayStartsWith(g2Answer);
+    }
+    setTimeout(nextGame2, won ? 3600 : 2800);
   } else {
     btn.classList.add("wrong");
     if (!playFx("wrong")) ohNoSound();   // SAY "try again" out loud
