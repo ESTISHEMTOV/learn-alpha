@@ -10,8 +10,8 @@ const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 const PHRASES = {
-  wrong: ["אוֹפְּס, נַסִּי שׁוּב", "לֹא נָכוֹן, נַסִּי עוֹד פַּעַם", "כִּמְעַט! נַסִּי שׁוּב"],
-  right: ["כָּל הַכָּבוֹד!", "יוֹפִי!", "מְצוּיָּן!", "אַלּוּפָה!"],
+  wrong: ["אוֹפְּס"],                    // short "oops" is enough on a mistake
+  right: ["כָּל הַכָּבוֹד!", "יוֹפִי!", "מְצוּיָּן!"],
 };
 
 async function tts(text){
@@ -28,8 +28,13 @@ async function tts(text){
   const g = {};
   new Function("window", fs.readFileSync(OUT, "utf8"))(g);
   const AUDIO = g.AUDIO;
-  AUDIO.fx = {};
+  AUDIO.fx = AUDIO.fx || {};
   for (const kind of Object.keys(PHRASES)){
+    // Don't clobber a human recording already merged in (e.g. mom's "כל הכבוד").
+    if (AUDIO.fx[kind] && AUDIO.fx[kind].length){
+      console.log("(keeping existing " + kind + " clip)");
+      continue;
+    }
     AUDIO.fx[kind] = [];
     for (const p of PHRASES[kind]){
       AUDIO.fx[kind].push(await tts(p));

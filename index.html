@@ -158,6 +158,30 @@
   }
   .tr-points{ font-size:clamp(20px,5vw,26px); font-weight:800; color:#ff6ba6; margin-top:12px; }
 
+  /* ---------- Game 4: connect picture to letter ---------- */
+  .match-wrap{
+    position:relative; display:flex; justify-content:space-between; align-items:stretch;
+    direction:ltr; width:min(94vw,560px); margin:8px auto 4px;
+  }
+  .match-svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:2; }
+  .match-col{ display:flex; flex-direction:column; justify-content:space-between; gap:14px;
+    flex:0 0 44%; z-index:3; }
+  .m-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .match-pics .m-row{ flex-direction:row; }       /* emoji (outer) ... dot (inner/right) */
+  .match-letters .m-row{ flex-direction:row; }     /* dot (inner/left) ... letter (outer) */
+  .m-emoji{ font-size:clamp(42px,12vw,64px); line-height:1; }
+  .m-letter{ font-size:clamp(42px,12vw,64px); font-weight:800; line-height:1; min-width:1.1em; text-align:center; }
+  .m-dot{
+    flex:0 0 auto; width:34px; height:34px; border-radius:50%; cursor:pointer;
+    border:5px solid #b23046; background:#fff; box-shadow:0 3px 0 rgba(0,0,0,.12);
+    transition:transform .1s;
+  }
+  .m-dot:active{ transform:scale(.9); }
+  .m-dot.sel{ background:#b23046; animation:dotPulse .8s ease-in-out infinite; }
+  @keyframes dotPulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
+  .m-dot.matched{ background:#57cc99; border-color:#3da97a; cursor:default; }
+  .match-status{ font-size:clamp(17px,4.2vw,22px); font-weight:700; margin:12px 0 4px; min-height:1.4em; }
+
   /* ---------- Championship overlay ---------- */
   .champ{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center;
@@ -204,6 +228,9 @@
       <button class="big-btn" style="background:var(--orange)" data-go="game2">
         <span class="em">🖼️</span> משחק: איזו אות ראשונה?
       </button>
+      <button class="big-btn" style="background:#06d6a0" data-go="game4">
+        <span class="em">✏️</span> משחק: חברו ציור לאות
+      </button>
       <button class="big-btn" style="background:var(--purple)" data-go="trophies">
         <span class="em">🏆</span> האליפות שלי
         <span class="menu-badge" id="menuBadge">🏆 0 · ⭐ 0</span>
@@ -244,6 +271,18 @@
     <div class="game-hero" id="g2Pic">🦁</div>
     <button class="replay-btn" id="g2Replay">🔊 שמע את המילה</button>
     <div class="options" id="g2Opts"></div>
+  </section>
+
+  <!-- GAME 4: draw a line from each picture to its first letter -->
+  <section class="screen" id="screen-game4">
+    <div class="game-prompt">✏️ חברי כל ציור לאות הראשונה שלו</div>
+    <div class="match-wrap" id="matchWrap">
+      <div class="match-col match-pics" id="matchPics"></div>
+      <svg class="match-svg" id="matchSvg"></svg>
+      <div class="match-col match-letters" id="matchLetters"></div>
+    </div>
+    <div class="match-status" id="matchStatus">סמני עיגול ליד ציור, ואז עיגול ליד אות</div>
+    <button class="replay-btn" id="matchNew">🔄 לוח חדש</button>
   </section>
 
   <!-- TROPHIES -->
@@ -454,6 +493,7 @@ function show(id){
   if (id === "grid")  renderGrid();
   if (id === "game1") startGame1();
   if (id === "game2") startGame2();
+  if (id === "game4") startGame4();
   if (id === "trophies") renderTrophies();
   updateScoreUI(false);
 }
@@ -585,16 +625,16 @@ function guessG2(it, btn){
     const won = addPoint();
     if (!won){
       happySound(); celebrate();
-      // Say "כל הכבוד" (mom's voice) first, then reinforce with the word + its letter.
+      // Say "כל הכבוד" (mom's voice) then the letter name — NOT the word again
+      // (the child already heard the word when the question was asked).
       const seq = [];
       if (AUDIO.fx && AUDIO.fx.right && AUDIO.fx.right.length)
         seq.push(AUDIO.fx.right[randInt(AUDIO.fx.right.length)]);
-      const w = clipWord(g2Answer.l), n = clipName(g2Answer.l);
-      if (w) seq.push(w);
+      const n = clipName(g2Answer.l);
       if (n) seq.push(n);
-      if (seq.length) playClips(seq); else sayStartsWith(g2Answer);
+      if (seq.length) playClips(seq); else playFx("right");
     }
-    setTimeout(nextGame2, won ? 3600 : 2800);
+    setTimeout(nextGame2, won ? 3600 : 2400);
   } else {
     btn.classList.add("wrong");
     if (!playFx("wrong")) ohNoSound();   // SAY "try again" out loud
@@ -602,6 +642,97 @@ function guessG2(it, btn){
   }
 }
 document.getElementById("g2Replay").onclick = () => { ac(); sayWord(g2Answer); };
+
+/* ================= GAME 4: connect each picture to its first letter ======= */
+const SVGNS = "http://www.w3.org/2000/svg";
+const matchWrap = document.getElementById("matchWrap");
+const matchPics = document.getElementById("matchPics");
+const matchLetters = document.getElementById("matchLetters");
+const matchSvg = document.getElementById("matchSvg");
+const matchStatus = document.getElementById("matchStatus");
+let m4Sel = { pic: null, letter: null }, m4Done = 0, m4Total = 0;
+
+function startGame4(){ renderMatch(); }
+function renderMatch(){
+  matchSvg.innerHTML = "";
+  matchPics.innerHTML = "";
+  matchLetters.innerHTML = "";
+  m4Sel = { pic: null, letter: null };
+  m4Done = 0;
+  const items = sample(LETTERS, 5);      // 5 pictures per board
+  m4Total = items.length;
+  const picOrder = shuffle(items);
+  const letterOrder = shuffle(items);
+  picOrder.forEach(it => {
+    const row = document.createElement("div"); row.className = "m-row";
+    const em = document.createElement("span"); em.className = "m-emoji"; em.textContent = it.p;
+    const dot = document.createElement("button"); dot.className = "m-dot"; dot.dataset.letter = it.l;
+    dot.onclick = () => selectDot("pic", dot, it);
+    row.appendChild(em); row.appendChild(dot);
+    matchPics.appendChild(row);
+  });
+  letterOrder.forEach((it, i) => {
+    const row = document.createElement("div"); row.className = "m-row";
+    const dot = document.createElement("button"); dot.className = "m-dot"; dot.dataset.letter = it.l;
+    dot.onclick = () => selectDot("letter", dot, it);
+    const lt = document.createElement("span"); lt.className = "m-letter"; lt.textContent = it.l;
+    lt.style.color = COLORS[i % COLORS.length];
+    row.appendChild(dot); row.appendChild(lt);
+    matchLetters.appendChild(row);
+  });
+  matchStatus.textContent = "סמני עיגול ליד ציור, ואז עיגול ליד אות";
+}
+function selectDot(side, dot, it){
+  ac();
+  if (dot.classList.contains("matched")) return;
+  if (side === "pic") sayWord(it); else sayLetter(it);   // helpful audio for a non-reader
+  const prev = m4Sel[side];
+  if (prev === dot){ dot.classList.remove("sel"); m4Sel[side] = null; return; }  // tap again = deselect
+  if (prev) prev.classList.remove("sel");
+  dot.classList.add("sel");
+  m4Sel[side] = dot;
+  if (m4Sel.pic && m4Sel.letter) evaluateMatch();
+}
+function dotCenter(dot){
+  const wr = matchWrap.getBoundingClientRect(), r = dot.getBoundingClientRect();
+  return { x: r.left - wr.left + r.width / 2, y: r.top - wr.top + r.height / 2 };
+}
+function drawMatchLine(pDot, lDot, color){
+  const a = dotCenter(pDot), b = dotCenter(lDot);
+  const line = document.createElementNS(SVGNS, "line");
+  line.setAttribute("x1", a.x); line.setAttribute("y1", a.y);
+  line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", "6");
+  line.setAttribute("stroke-linecap", "round");
+  matchSvg.appendChild(line);
+  return line;
+}
+function evaluateMatch(){
+  const p = m4Sel.pic, l = m4Sel.letter;
+  m4Sel = { pic: null, letter: null };
+  if (p.dataset.letter === l.dataset.letter){
+    drawMatchLine(p, l, "#4cc9f0");
+    p.classList.remove("sel"); l.classList.remove("sel");
+    p.classList.add("matched"); l.classList.add("matched");
+    m4Done++;
+    const won = addPoint();
+    if (!won){ happySound(); playFx("right"); }
+    if (m4Done >= m4Total){
+      matchStatus.textContent = "כל הכבוד! סיימת את הלוח! 🎉";
+      celebrate();
+      setTimeout(renderMatch, 2800);
+    } else {
+      matchStatus.textContent = "יופי! עוד " + (m4Total - m4Done) + " 💪";
+    }
+  } else {
+    const line = drawMatchLine(p, l, "#ef476f");
+    if (!playFx("wrong")) ohNoSound();
+    matchStatus.textContent = "לא מתאים, נסי שוב 🔁";
+    setTimeout(() => { line.remove(); p.classList.remove("sel"); l.classList.remove("sel"); }, 750);
+  }
+}
+document.getElementById("matchNew").onclick = () => { ac(); clickSound(); renderMatch(); };
 
 /* ================= SCORE & TROPHIES ================= */
 const GOAL = 100; // points per trophy
