@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>הא-ב הקסום 🌈</title>
+<style>
+  :root{
+    --pink:#ff6ba6; --purple:#9b5de5; --blue:#4cc9f0; --green:#57cc99;
+    --yellow:#ffd166; --orange:#ff924c; --red:#ef476f;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:"Varela Round","Segoe UI",Arial,sans-serif;
+    background:linear-gradient(160deg,#fff0f6 0%,#e8f7ff 50%,#f0fff4 100%);
+    color:#3a2d5c; overflow-x:hidden; overflow-y:hidden; user-select:none;
+    -webkit-user-select:none; touch-action:manipulation;
+  }
+  #app{ height:100dvh; display:flex; flex-direction:column; }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px; gap:8px;
+  }
+  .home-btn{
+    border:none; background:#fff; border-radius:20px; padding:8px 14px;
+    font-size:clamp(18px,4vw,26px); cursor:pointer; box-shadow:0 4px 0 #d9cfeb;
+    font-family:inherit; transition:transform .1s;
+  }
+  .home-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #d9cfeb; }
+  h1{ margin:0; font-size:clamp(20px,5vw,34px); text-shadow:2px 2px 0 #fff; }
+
+  /* ---------- Screens ---------- */
+  .screen{ flex:1; display:none; flex-direction:column; align-items:center;
+    justify-content:center; padding:12px; text-align:center; overflow:auto; }
+  .screen.active{ display:flex; animation:pop .35s ease; }
+  @keyframes pop{ from{opacity:0; transform:scale(.9)} to{opacity:1; transform:scale(1)} }
+
+  /* ---------- Home menu ---------- */
+  .menu{ display:flex; flex-direction:column; gap:22px; width:min(92vw,460px); }
+  .big-btn{
+    border:none; border-radius:32px; padding:26px 20px; cursor:pointer;
+    font-size:clamp(24px,6vw,34px); font-family:inherit; color:#fff; font-weight:700;
+    box-shadow:0 8px 0 rgba(0,0,0,.15); transition:transform .12s;
+    display:flex; align-items:center; justify-content:center; gap:14px;
+  }
+  .big-btn:active{ transform:translateY(5px); box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  .big-btn .em{ font-size:1.4em; }
+
+  /* ---------- Learn screen ---------- */
+  .card{
+    width:min(90vw,420px); border-radius:36px; padding:22px;
+    box-shadow:0 12px 30px rgba(0,0,0,.15); background:#fff;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .letter-big{ font-size:clamp(120px,34vw,220px); line-height:1; font-weight:800; }
+  .pic{ font-size:clamp(80px,22vw,150px); line-height:1; animation:float 2.5s ease-in-out infinite; }
+  @keyframes float{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  .word{ font-size:clamp(30px,8vw,48px); font-weight:700; }
+  .say-btn{
+    margin-top:6px; border:none; background:var(--yellow); color:#7a4b00;
+    border-radius:50%; width:84px; height:84px; font-size:44px; cursor:pointer;
+    box-shadow:0 6px 0 #e0a800; transition:transform .1s;
+  }
+  .say-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #e0a800; }
+  .nav-row{ display:flex; gap:20px; align-items:center; margin-top:16px; }
+  .nav-btn{
+    border:none; background:#fff; border-radius:50%; width:70px; height:70px;
+    font-size:38px; cursor:pointer; box-shadow:0 5px 0 #d9cfeb; transition:transform .1s;
+  }
+  .nav-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 #d9cfeb; }
+  .nav-btn:disabled{ opacity:.35; }
+  .progress{ font-size:22px; font-weight:700; min-width:80px; }
+
+  /* ---------- Grid (all letters) ---------- */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(60px,1fr));
+    gap:10px; width:min(92vw,600px); padding:6px; margin:0 auto; justify-content:center; }
+  .cell{
+    border:none; border-radius:20px; aspect-ratio:1; cursor:pointer; color:#fff;
+    font-size:clamp(34px,9vw,52px); font-weight:800; box-shadow:0 5px 0 rgba(0,0,0,.15);
+    display:flex; align-items:center; justify-content:center; transition:transform .1s;
+  }
+  .cell:active{ transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.15); }
+
+  /* ---------- Game screen ---------- */
+  .game-prompt{ font-size:clamp(22px,5.5vw,32px); font-weight:700; margin-bottom:6px; }
+  .game-hero{ font-size:clamp(90px,26vw,170px); line-height:1; margin:4px 0; }
+  .replay-btn{
+    border:none; background:var(--blue); color:#fff; border-radius:24px;
+    padding:12px 22px; font-size:24px; font-family:inherit; cursor:pointer;
+    box-shadow:0 5px 0 #2a9dc4; margin-bottom:14px;
+  }
+  .replay-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 #2a9dc4; }
+  .options{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
+    width:min(92vw,520px); margin:0 auto; }
+  .opt{
+    border:none; border-radius:28px; cursor:pointer; color:#fff;
+    width:clamp(78px,25vw,120px); height:clamp(78px,25vw,120px);
+    font-size:clamp(42px,12vw,68px); font-weight:800; box-shadow:0 7px 0 rgba(0,0,0,.15);
+    transition:transform .12s;
+  }
+  .opt:active{ transform:translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  .opt.correct{ animation:correct .6s; }
+  .opt.wrong{ animation:wrong .4s; }
+  @keyframes correct{ 0%{transform:scale(1)} 40%{transform:scale(1.25) rotate(6deg)} 100%{transform:scale(1)} }
+  @keyframes wrong{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+  .score{ margin-top:16px; font-size:24px; font-weight:700; }
+
+  /* ---------- Confetti / celebration ---------- */
+  #confetti{ position:fixed; inset:0; pointer-events:none; z-index:50; }
+  .cheer{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    z-index:60; pointer-events:none; font-size:clamp(90px,30vw,220px);
+  }
+  .cheer.show{ display:flex; animation:cheer 1s ease; }
+  @keyframes cheer{ 0%{transform:scale(.2); opacity:0} 30%{transform:scale(1.2); opacity:1}
+    70%{transform:scale(1); opacity:1} 100%{transform:scale(1.1); opacity:0} }
+
+  /* ---------- Score badge (always visible in header) ---------- */
+  .score-badge{
+    display:flex; gap:8px; align-items:center; background:#fff; border-radius:20px;
+    padding:6px 12px; box-shadow:0 3px 0 #d9cfeb; white-space:nowrap;
+    font-size:clamp(14px,3.6vw,20px); font-weight:800;
+  }
+  .score-badge .sb-tr{ color:#f4a300; }
+  .score-badge .sb-pt{ color:#ff6ba6; }
+  .score-badge b{ font-size:1.05em; }
+  .score-badge.bump{ animation:sbBump .4s ease; }
+  @keyframes sbBump{ 0%,100%{transform:scale(1)} 40%{transform:scale(1.25)} }
+
+  /* menu tile sub-badge */
+  .menu-badge{
+    position:absolute; inset-inline-start:16px; background:rgba(255,255,255,.28);
+    border-radius:14px; padding:4px 10px; font-size:clamp(13px,3vw,17px); font-weight:800;
+  }
+  .big-btn{ position:relative; }
+
+  /* ---------- Trophies screen ---------- */
+  .tr-title{ font-size:clamp(26px,7vw,40px); font-weight:800; margin-bottom:6px; }
+  .tr-count{ font-size:clamp(20px,5vw,28px); font-weight:700; color:#f4a300; margin-bottom:14px; }
+  .tr-shelf{
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-content:flex-start;
+    width:min(92vw,520px); min-height:96px; max-height:230px; overflow:auto; padding:14px;
+    background:#fff; border-radius:26px; box-shadow:0 8px 22px rgba(0,0,0,.12); margin-bottom:18px;
+  }
+  .tr-shelf .t{ font-size:clamp(38px,9vw,52px); animation:float 2.5s ease-in-out infinite; }
+  .tr-shelf .empty{ color:#b9add6; font-size:clamp(18px,4.5vw,24px); font-weight:700; align-self:center; }
+  .tr-progress-label{ font-size:clamp(18px,4.6vw,24px); font-weight:700; margin-bottom:10px; }
+  .tr-bar{
+    width:min(90vw,440px); height:28px; background:#e7dcf7; border-radius:16px;
+    overflow:hidden; box-shadow:inset 0 2px 5px rgba(0,0,0,.12);
+  }
+  .tr-bar-fill{
+    height:100%; width:0%; border-radius:16px;
+    background:linear-gradient(90deg,#57cc99,#4cc9f0,#9b5de5); transition:width .5s ease;
+  }
+  .tr-points{ font-size:clamp(20px,5vw,26px); font-weight:800; color:#ff6ba6; margin-top:12px; }
+
+  /* ---------- Game 3: say the letter ---------- */
+  .g3-letter{
+    font-size:clamp(120px,34vw,220px); line-height:1; font-weight:800; color:var(--purple);
+    background:#fff; border-radius:36px; padding:6px 40px; margin:6px 0 14px;
+    box-shadow:0 12px 30px rgba(0,0,0,.15);
+  }
+  .mic-mini{
+    margin-top:20px; border:none; background:#fff; color:var(--red); border-radius:20px;
+    padding:10px 18px; font-size:clamp(14px,3.6vw,18px); font-family:inherit; font-weight:700;
+    cursor:pointer; box-shadow:0 4px 0 #e2b8c4;
+  }
+  .mic-mini:active{ transform:translateY(2px); box-shadow:0 2px 0 #e2b8c4; }
+  .mic-mini.listening{ background:#06d6a0; color:#fff; box-shadow:0 4px 0 #05a97e;
+    animation:micPulse .9s ease-in-out infinite; }
+  @keyframes micPulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .g3-status{ font-size:clamp(18px,4.6vw,24px); font-weight:700; margin:14px 0 6px; min-height:1.4em; }
+  .g3-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .g3-act{
+    border:none; background:#fff; border-radius:20px; padding:10px 16px;
+    font-size:clamp(15px,3.8vw,20px); font-family:inherit; font-weight:700; cursor:pointer;
+    box-shadow:0 4px 0 #d9cfeb; color:#3a2d5c;
+  }
+  .g3-act:active{ transform:translateY(2px); box-shadow:0 2px 0 #d9cfeb; }
+  .g3-act.g3-know{ background:var(--green); color:#fff; box-shadow:0 4px 0 #3da97a; }
+
+  /* ---------- Championship overlay ---------- */
+  .champ{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    z-index:70; background:rgba(40,20,70,.55); backdrop-filter:blur(2px); pointer-events:none;
+  }
+  .champ.show{ display:flex; animation:champFade .4s ease; }
+  @keyframes champFade{ from{opacity:0} to{opacity:1} }
+  .champ-box{
+    background:#fff; border-radius:36px; padding:30px 34px; text-align:center;
+    box-shadow:0 18px 50px rgba(0,0,0,.35); animation:champPop .6s ease;
+  }
+  @keyframes champPop{ 0%{transform:scale(.3) rotate(-10deg); opacity:0}
+    60%{transform:scale(1.15) rotate(4deg)} 100%{transform:scale(1) rotate(0)} }
+  .champ-trophy{ font-size:clamp(110px,30vw,180px); line-height:1;
+    animation:trophySpin 1.2s ease-in-out infinite; }
+  @keyframes trophySpin{ 0%,100%{transform:rotate(-8deg) scale(1)} 50%{transform:rotate(8deg) scale(1.08)} }
+  .champ-title{ font-size:clamp(38px,10vw,60px); font-weight:800; color:#f4a300; margin-top:6px; }
+  .champ-sub{ font-size:clamp(20px,5vw,28px); font-weight:700; margin-top:8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="home-btn" id="homeBtn" aria-label="בית">🏠</button>
+    <h1>🌈 הא-ב הקסום 🌈</h1>
+    <div class="score-badge" id="scoreBadge" aria-label="ניקוד">
+      <span class="sb-tr">🏆 <b id="sbTrophies">0</b></span>
+      <span class="sb-pt">⭐ <b id="sbPoints">0</b></span>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="menu">
+      <button class="big-btn" style="background:var(--pink)" data-go="learn">
+        <span class="em" style="font-weight:800; letter-spacing:2px">אבג</span> לומדים אותיות
+      </button>
+      <button class="big-btn" style="background:var(--green)" data-go="grid">
+        <span class="em">🎨</span> כל האותיות
+      </button>
+      <button class="big-btn" style="background:var(--blue)" data-go="game1">
+        <span class="em">👂</span> משחק: מצא את האות
+      </button>
+      <button class="big-btn" style="background:var(--orange)" data-go="game2">
+        <span class="em">🖼️</span> משחק: איזו אות ראשונה?
+      </button>
+      <button class="big-btn" style="background:var(--red)" data-go="game3">
+        <span class="em">🎤</span> משחק: תגידי את האות
+      </button>
+      <button class="big-btn" style="background:var(--purple)" data-go="trophies">
+        <span class="em">🏆</span> האליפות שלי
+        <span class="menu-badge" id="menuBadge">🏆 0 · ⭐ 0</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section class="screen" id="screen-learn">
+    <div class="card" id="learnCard">
+      <div class="letter-big" id="lLetter">א</div>
+      <div class="pic" id="lPic">🦁</div>
+      <div class="word" id="lWord">אריה</div>
+      <button class="say-btn" id="lSay" aria-label="שמע">🔊</button>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" id="lPrev" aria-label="הקודם">▶</button>
+      <div class="progress" id="lProg" style="direction:ltr">1 / 22</div>
+      <button class="nav-btn" id="lNext" aria-label="הבא">◀</button>
+    </div>
+  </section>
+
+  <!-- GRID -->
+  <section class="screen" id="screen-grid">
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- GAME 1: hear a letter, find it -->
+  <section class="screen" id="screen-game1">
+    <div class="game-prompt">👂 לחצי על האות ששמעת</div>
+    <button class="replay-btn" id="g1Replay">🔊 שמע שוב</button>
+    <div class="options" id="g1Opts"></div>
+  </section>
+
+  <!-- GAME 2: see a picture, pick first letter -->
+  <section class="screen" id="screen-game2">
+    <div class="game-prompt" id="g2Prompt">איזו אות מתחילה את המילה?</div>
+    <div class="game-hero" id="g2Pic">🦁</div>
+    <button class="replay-btn" id="g2Replay">🔊 שמע את המילה</button>
+    <div class="options" id="g2Opts"></div>
+  </section>
+
+  <!-- GAME 3: see a letter, SAY it out loud, self-check (mic optional) -->
+  <section class="screen" id="screen-game3">
+    <div class="game-prompt">🗣️ תגידי בקול: איזו אות זו?</div>
+    <div class="g3-letter" id="g3Letter">א</div>
+    <div class="g3-status" id="g3Status">אמרת בקול? כל הכבוד! עכשיו בדקי את עצמך 👇</div>
+    <div class="g3-actions">
+      <button class="g3-act g3-know" id="g3Know">✅ ידעתי!</button>
+      <button class="g3-act" id="g3Hint">🔊 מה האות?</button>
+      <button class="g3-act" id="g3Skip">➡️ אות הבאה</button>
+    </div>
+    <button class="mic-mini" id="g3Mic">🎤 לבדיקה עם המיקרופון</button>
+  </section>
+
+  <!-- TROPHIES -->
+  <section class="screen" id="screen-trophies">
+    <div class="tr-title">🏆 האליפות שלי 🏆</div>
+    <div class="tr-count" id="trCount">0 גביעים</div>
+    <div class="tr-shelf" id="trShelf"></div>
+    <div class="tr-progress-label" id="trProgLabel">עוד 100 נקודות לגביע!</div>
+    <div class="tr-bar"><div class="tr-bar-fill" id="trBarFill"></div></div>
+    <div class="tr-points" id="trPoints">⭐ 0 / 100</div>
+  </section>
+</div>
+
+<canvas id="confetti"></canvas>
+<div class="cheer" id="cheer">🎉</div>
+<div class="champ" id="champ">
+  <div class="champ-box">
+    <div class="champ-trophy">🏆</div>
+    <div class="champ-title">אַלּוּפָה!</div>
+    <div class="champ-sub">הגעת ל־100 נקודות!<br>קיבלת גביע! 🎉</div>
+  </div>
+</div>
+
+<!-- Real Hebrew voice clips (base64-embedded, works offline). If this file is
+     missing the app falls back to the browser's speech engine. -->
+<script src="audio-data.js"></script>
+<script>
+"use strict";
+
+/* ================= DATA ================= */
+// l=letter, w=Hebrew word, p=picture, t=Latin transliteration of the word
+// (used so an English TTS voice can still make Hebrew-sounding sound
+//  when no Hebrew voice is installed), n=letter-name transliteration.
+const LETTERS = [
+  {l:"א", w:"אריה",    p:"🦁", t:"ar-yeh",       n:"ah-lef"},
+  {l:"ב", w:"בננה",    p:"🍌", t:"ba-na-na",     n:"bet"},
+  {l:"ג", w:"גלידה",   p:"🍦", t:"glee-da",      n:"gee-mel"},
+  {l:"ד", w:"דג",      p:"🐠", t:"dag",          n:"dah-let"},
+  {l:"ה", w:"הליקופטר", p:"🚁", t:"heli-copter",  n:"hey"},
+  {l:"ו", w:"ורד",     p:"🌹", t:"veh-red",      n:"vahv"},
+  {l:"ז", w:"זברה",    p:"🦓", t:"zeb-ra",       n:"zah-yeen"},
+  {l:"ח", w:"חתול",    p:"🐱", t:"kha-tool",     n:"khet"},
+  {l:"ט", w:"טרקטור",  p:"🚜", t:"trak-tor",     n:"tet"},
+  {l:"י", w:"ילדה",    p:"👧", t:"yal-da",       n:"yod"},
+  {l:"כ", w:"כלב",     p:"🐶", t:"keh-lev",      n:"kahf"},
+  {l:"ל", w:"לימון",   p:"🍋", t:"lee-mon",      n:"lah-med"},
+  {l:"מ", w:"מכונית",  p:"🚗", t:"me-kho-neet",  n:"mem"},
+  {l:"נ", w:"נמר",     p:"🐆", t:"na-mer",       n:"noon"},
+  {l:"ס", w:"סוס",     p:"🐴", t:"soos",         n:"sah-mekh"},
+  {l:"ע", w:"עוגה",    p:"🎂", t:"oo-ga",        n:"ah-yeen"},
+  {l:"פ", w:"פרפר",    p:"🦋", t:"par-par",      n:"pey"},
+  {l:"צ", w:"צפרדע",   p:"🐸", t:"tsfar-deh-ah", n:"tsah-dee"},
+  {l:"ק", w:"קוף",     p:"🐵", t:"kohf",         n:"koof"},
+  {l:"ר", w:"רכבת",    p:"🚂", t:"ra-keh-vet",   n:"resh"},
+  {l:"ש", w:"שמש",     p:"☀️", t:"sheh-mesh",    n:"sheen"},
+  {l:"ת", w:"תות",     p:"🍓", t:"toot",         n:"tahf"},
+];
+
+// Fully-voweled Hebrew letter names, used when a real Hebrew voice IS installed.
+const LETTER_NAME = {
+  "א":"אָלֶף","ב":"בֵּית","ג":"גִּימֶל","ד":"דָּלֶת","ה":"הֵא","ו":"וָו",
+  "ז":"זַיִן","ח":"חֵית","ט":"טֵית","י":"יוֹד","כ":"כָּף","ל":"לָמֶד",
+  "מ":"מֵם","נ":"נוּן","ס":"סָמֶך","ע":"עַיִן","פ":"פֵּא","צ":"צָדִי",
+  "ק":"קוֹף","ר":"רֵישׁ","ש":"שִׁין","ת":"תָּו"
+};
+
+const COLORS = ["#ff6ba6","#9b5de5","#4cc9f0","#57cc99","#ffd166","#ff924c","#ef476f","#06d6a0"];
+const CHEERS = ["🎉","🌟","👏","🥳","🎈","💖","🏆","✨"];
+
+/* ================= SPEECH / AUDIO =================
+   Primary: real pre-recorded Hebrew voice clips embedded in audio-data.js
+   (authentic Hebrew pronunciation, works offline). Each letter has a "name"
+   clip (the letter name) and a "word" clip (the picture word).
+   Fallback (only if the clips file is missing): the browser speech engine —
+   real Hebrew if a Hebrew voice is installed, else a Latin transliteration. */
+const AUDIO = (window.AUDIO && window.AUDIO.names) ? window.AUDIO : { names:{}, words:{} };
+function clipName(l){ return AUDIO.names[l]; }
+function clipWord(l){ return AUDIO.words[l]; }
+const haveClips = Object.keys(AUDIO.names).length > 0;
+
+// Sequential clip player: plays a list of data-URI clips one after another.
+let _curAudio = null;
+function stopClips(){
+  if (_curAudio){ try{ _curAudio.pause(); }catch(e){} _curAudio = null; }
+}
+function playClips(urls, onDone){
+  stopClips();
+  if (window.speechSynthesis) { try{ speechSynthesis.cancel(); }catch(e){} }
+  let i = 0;
+  (function next(){
+    if (i >= urls.length){ if (onDone) onDone(); return; }
+    const url = urls[i++];
+    if (!url){ next(); return; }
+    const a = new Audio(url);
+    _curAudio = a;
+    a.onended = next;
+    a.onerror = next;
+    const p = a.play();
+    if (p && p.catch) p.catch(() => next());
+  })();
+}
+
+/* ---- Browser-speech fallback (used only when clips are unavailable) ---- */
+let heVoice = null, fallbackVoice = null, hasHebrew = false;
+function pickVoice(){
+  const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  heVoice = voices.find(v => /^he|^iw|-IL/i.test(v.lang)) || null;
+  hasHebrew = !!heVoice;
+  fallbackVoice = voices.find(v => /^en/i.test(v.lang)) || voices[0] || null;
+}
+if (window.speechSynthesis){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+let _utter = null;
+function speak(text){
+  if (!window.speechSynthesis) return;
+  try{
+    if (!heVoice && !fallbackVoice) pickVoice();
+    speechSynthesis.cancel();
+    if (speechSynthesis.paused) speechSynthesis.resume();
+    const u = new SpeechSynthesisUtterance(text);
+    if (hasHebrew){ u.lang = "he-IL"; u.voice = heVoice; }
+    else if (fallbackVoice){ u.lang = fallbackVoice.lang; u.voice = fallbackVoice; }
+    u.rate = 0.8; u.pitch = 1.1;
+    _utter = u;
+    speechSynthesis.speak(u);
+  }catch(e){/* ignore */}
+}
+
+/* ---- Public helpers: prefer real clips, fall back to speech ---- */
+function sayLetter(item){
+  const n = clipName(item.l);
+  if (n) return playClips([n]);
+  speak(hasHebrew ? (LETTER_NAME[item.l] || item.l) : (item.n || item.l));
+}
+function sayLetterWord(item){
+  const n = clipName(item.l), w = clipWord(item.l);
+  if (n && w) return playClips([n, w]);
+  if (hasHebrew) speak((LETTER_NAME[item.l] || item.l) + ". " + item.w);
+  else           speak((item.n || item.l) + ". " + (item.t || item.w));
+}
+function sayWord(item){
+  const w = clipWord(item.l);
+  if (w) return playClips([w]);
+  speak(hasHebrew ? item.w : (item.t || item.w));
+}
+// Feedback after a correct answer: the word, then its first letter's name.
+function sayStartsWith(item){
+  const w = clipWord(item.l), n = clipName(item.l);
+  if (w && n) return playClips([w, n]);
+  if (hasHebrew) speak(item.w + " מתחיל באות " + (LETTER_NAME[item.l] || item.l));
+  else           speak((item.t || item.w) + " starts with " + (item.n || item.l));
+}
+
+/* ================= SOUND EFFECTS (WebAudio) ================= */
+let audioCtx = null;
+function ac(){
+  if (!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  // Browsers often start the context suspended until a user gesture — resume it.
+  if (audioCtx && audioCtx.state === "suspended"){
+    try{ audioCtx.resume(); }catch(e){/* ignore */}
+  }
+  return audioCtx;
+}
+function tone(freq, start, dur, type){
+  const c = ac(); if (!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type || "sine"; o.frequency.value = freq;
+  o.connect(g); g.connect(c.destination);
+  const t = c.currentTime + start;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+function happySound(){ tone(523,0,0.15); tone(659,0.12,0.15); tone(784,0.24,0.25); }
+function ohNoSound(){ tone(300,0,0.18,"triangle"); tone(220,0.16,0.25,"triangle"); }
+function clickSound(){ tone(660,0,0.08,"triangle"); } // soft tap feedback (always works)
+
+// Some browsers drop the very first speech utterance. Warm the engine up once
+// on the first user gesture with a silent-ish empty utterance.
+let speechPrimed = false;
+function primeSpeech(){
+  if (speechPrimed || !window.speechSynthesis) return;
+  speechPrimed = true;
+  try{ speechSynthesis.speak(new SpeechSynthesisUtterance(" ")); }catch(e){}
+}
+
+/* ================= NAVIGATION ================= */
+const screens = document.querySelectorAll(".screen");
+function show(id){
+  screens.forEach(s => s.classList.toggle("active", s.id === "screen-" + id));
+  stopClips();
+  stopRecognition();
+  if (id !== "game3") releaseMic();
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  if (id === "learn") renderLearn();
+  if (id === "grid")  renderGrid();
+  if (id === "game1") startGame1();
+  if (id === "game2") startGame2();
+  if (id === "game3") startGame3();
+  if (id === "trophies") renderTrophies();
+  updateScoreUI(false);
+}
+document.getElementById("homeBtn").onclick = () => { clickSound(); show("home"); };
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+  ac(); primeSpeech(); clickSound(); show(b.dataset.go);
+});
+
+/* ================= LEARN ================= */
+let learnIdx = 0;
+const lLetter = document.getElementById("lLetter");
+const lPic = document.getElementById("lPic");
+const lWord = document.getElementById("lWord");
+const lProg = document.getElementById("lProg");
+const lPrev = document.getElementById("lPrev");
+const lNext = document.getElementById("lNext");
+
+function renderLearn(){
+  const it = LETTERS[learnIdx];
+  lLetter.textContent = it.l;
+  lLetter.style.color = COLORS[learnIdx % COLORS.length];
+  lPic.textContent = it.p;
+  lWord.textContent = it.w;
+  lWord.style.color = COLORS[learnIdx % COLORS.length];
+  lProg.textContent = (learnIdx + 1) + " / " + LETTERS.length;
+  lPrev.disabled = (learnIdx === 0);
+  lNext.disabled = (learnIdx === LETTERS.length - 1);
+  sayLetterWord(it);
+}
+document.getElementById("lSay").onclick = () => { ac(); sayLetterWord(LETTERS[learnIdx]); };
+lPrev.onclick = () => { if (learnIdx > 0){ ac(); clickSound(); learnIdx--; renderLearn(); } };
+lNext.onclick = () => { if (learnIdx < LETTERS.length - 1){ ac(); clickSound(); learnIdx++; renderLearn(); } };
+
+/* ================= GRID ================= */
+const gridEl = document.getElementById("grid");
+function renderGrid(){
+  gridEl.innerHTML = "";
+  LETTERS.forEach((it, i) => {
+    const b = document.createElement("button");
+    b.className = "cell";
+    b.textContent = it.l;
+    b.style.background = COLORS[i % COLORS.length];
+    b.setAttribute("aria-label", LETTER_NAME[it.l] || it.l);
+    b.onclick = () => { ac(); clickSound(); sayLetterWord(it); bump(b); };
+    gridEl.appendChild(b);
+  });
+}
+function bump(el){
+  el.style.transform = "scale(1.15)";
+  setTimeout(() => { el.style.transform = ""; }, 180);
+}
+
+/* ================= HELPERS ================= */
+function shuffle(a){
+  const arr = a.slice();
+  for (let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function sample(arr, n){ return shuffle(arr).slice(0, n); }
+function randInt(n){ return Math.floor(Math.random() * n); }
+
+/* ================= GAME 1: hear letter -> find it ================= */
+let g1Answer = null, g1Lock = false;
+const g1Opts = document.getElementById("g1Opts");
+
+function startGame1(){ nextGame1(); }
+function nextGame1(){
+  g1Lock = false;
+  const choices = sample(LETTERS, 3);
+  g1Answer = choices[randInt(choices.length)];
+  g1Opts.innerHTML = "";
+  choices.forEach((it, i) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = it.l;
+    b.style.background = COLORS[i % COLORS.length];
+    b.onclick = () => guessG1(it, b);
+    g1Opts.appendChild(b);
+  });
+  setTimeout(() => sayLetter(g1Answer), 350);
+}
+function guessG1(it, btn){
+  if (g1Lock) return;
+  if (it.l === g1Answer.l){
+    g1Lock = true;
+    btn.classList.add("correct");
+    const won = addPoint();
+    if (!won){ happySound(); celebrate(); }
+    setTimeout(nextGame1, won ? 3200 : 1300);
+  } else {
+    btn.classList.add("wrong");
+    ohNoSound();
+    setTimeout(() => btn.classList.remove("wrong"), 450);
+  }
+}
+document.getElementById("g1Replay").onclick = () => { ac(); sayLetter(g1Answer); };
+
+/* ================= GAME 2: see picture -> pick first letter ================= */
+let g2Answer = null, g2Lock = false;
+const g2Opts = document.getElementById("g2Opts");
+const g2Pic = document.getElementById("g2Pic");
+
+function startGame2(){ nextGame2(); }
+function nextGame2(){
+  g2Lock = false;
+  g2Answer = LETTERS[randInt(LETTERS.length)];
+  g2Pic.textContent = g2Answer.p;
+  const distractors = sample(LETTERS.filter(x => x.l !== g2Answer.l), 2);
+  const choices = shuffle([g2Answer, ...distractors]);
+  g2Opts.innerHTML = "";
+  choices.forEach((it, i) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = it.l;
+    b.style.background = COLORS[i % COLORS.length];
+    b.onclick = () => guessG2(it, b);
+    g2Opts.appendChild(b);
+  });
+  setTimeout(() => sayWord(g2Answer), 350);
+}
+function guessG2(it, btn){
+  if (g2Lock) return;
+  if (it.l === g2Answer.l){
+    g2Lock = true;
+    btn.classList.add("correct");
+    const won = addPoint();
+    if (!won){ happySound(); celebrate(); }
+    sayStartsWith(g2Answer);
+    setTimeout(nextGame2, won ? 3600 : 1900);
+  } else {
+    btn.classList.add("wrong");
+    ohNoSound();
+    setTimeout(() => btn.classList.remove("wrong"), 450);
+  }
+}
+document.getElementById("g2Replay").onclick = () => { ac(); sayWord(g2Answer); };
+
+/* ================= GAME 3: see a letter -> SAY it ================= */
+// Accepted spoken answers per letter (normalized: nikud/spaces/punct removed).
+// A young child saying a single Hebrew letter name is recognized imperfectly,
+// so we accept the letter name plus common near-misses.
+const SPOKEN_OK = {
+  "א":["אלף","אלפ","אלב","אלאף"], "ב":["בית","בת","בטה","בים"],
+  "ג":["גימל","גימ","גימא","גמל"], "ד":["דלת","דלית","דלד"],
+  "ה":["הא","הה","הי","היי"], "ו":["וו","ואו","וב","וואו"],
+  "ז":["זין","זיין","זהין"], "ח":["חית","חת","חיט","חיית"],
+  "ט":["טית","טת","טיט","טט"], "י":["יוד","יוט","יודי"],
+  "כ":["כף","כאף","קף","כב"], "ל":["למד","לאמד","למאד"],
+  "מ":["מם","ממ","מים","ממה"], "נ":["נון","נו","נן","נונה"],
+  "ס":["סמך","סמח","סמק"], "ע":["עין","אין","עיין"],
+  "פ":["פא","פה","פי","פיי"], "צ":["צדי","צדיק","צדיי","צאדי"],
+  "ק":["קוף","קוב","קוו","קופ"], "ר":["ריש","רש","רייש","ראש"],
+  "ש":["שין","שן","שיין"], "ת":["תו","תיו","תב","תיב","תאו"]
+};
+function normHeb(s){
+  return (s || "").replace(/[֑-ׇ]/g, "")   // strip nikud/te'amim
+                  .replace(/[^א-ת]/g, "");  // keep only Hebrew letters
+}
+function spokenMatches(letter, said){
+  const n = normHeb(said);
+  if (!n) return false;
+  if (n === letter) return true;
+  const cands = (SPOKEN_OK[letter] || []).concat([normHeb(LETTER_NAME[letter])]);
+  return cands.some(c => c && (n === c || n.includes(c) || c.includes(n)));
+}
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recogOK = !!SR;
+let recog = null, micDenied = false, g3Listening = false, g3Item = null;
+const g3LetterEl = document.getElementById("g3Letter");
+const g3Mic = document.getElementById("g3Mic");
+const g3Status = document.getElementById("g3Status");
+
+function getRecog(){
+  if (!SR) return null;
+  if (recog) return recog;
+  recog = new SR();
+  recog.lang = "he-IL";
+  recog.interimResults = false;
+  recog.maxAlternatives = 6;
+  recog.continuous = false;
+  recog.onresult = (e) => {
+    const alts = [];
+    for (let i = 0; i < e.results.length; i++){
+      const r = e.results[i];
+      for (let j = 0; j < r.length; j++) alts.push(r[j].transcript);
+    }
+    handleG3Result(alts);
+  };
+  recog.onerror = (e) => {
+    g3Listening = false; g3Mic.classList.remove("listening");
+    if (e.error === "not-allowed" || e.error === "service-not-allowed"){
+      micDenied = true;
+      g3Status.textContent = "🎤 המיקרופון חסום — תגידי בקול ולחצי ✅ ידעתי";
+    } else if (e.error === "no-speech"){
+      g3Status.textContent = "לא שמעתי 🙉 נסי שוב — לחצי על המיקרופון";
+    } else if (e.error === "network"){
+      g3Status.textContent = "אין חיבור לזיהוי 📡 אפשר ללחוץ ✅ ידעתי";
+    } else {
+      g3Status.textContent = "נסי שוב 🎤";
+    }
+  };
+  recog.onend = () => { g3Listening = false; g3Mic.classList.remove("listening"); };
+  return recog;
+}
+function stopRecognition(){
+  if (recog && g3Listening){ try{ recog.abort(); }catch(e){} }
+  g3Listening = false;
+  if (g3Mic) g3Mic.classList.remove("listening");
+}
+
+// Hold one microphone stream open for the whole game session. On file:// the
+// browser treats the speech-mic permission as ephemeral and re-prompts on every
+// recognition.start(); keeping a live getUserMedia stream keeps the permission
+// "active" so the child is asked only once (when she enters the game).
+let micStream = null, micAsked = false;
+function ensureMic(){
+  if (micStream || micDenied) return Promise.resolve(!!micStream || !micDenied);
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.resolve(true);
+  micAsked = true;
+  return navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(s => { micStream = s; return true; })
+    .catch(() => {
+      micDenied = true;
+      g3Status.textContent = "🎤 המיקרופון חסום — תגידי בקול ולחצי ✅ ידעתי";
+      return false;
+    });
+}
+function releaseMic(){
+  if (micStream){ try{ micStream.getTracks().forEach(t => t.stop()); }catch(e){} micStream = null; }
+}
+
+// No microphone is requested automatically — the game works purely as
+// say-aloud + self-check, so there is never a permission prompt unless the
+// child explicitly taps the optional "🎤 בדיקה עם המיקרופון" button.
+function startGame3(){ nextGame3(); }
+function nextGame3(){
+  stopRecognition();
+  g3Item = LETTERS[randInt(LETTERS.length)];
+  g3LetterEl.textContent = g3Item.l;
+  g3LetterEl.style.color = COLORS[randInt(COLORS.length)];
+  g3Status.textContent = "אמרת בקול? כל הכבוד! עכשיו בדקי את עצמך 👇";
+  if (!recogOK) g3Mic.style.display = "none";
+}
+function listenG3(){
+  if (!recogOK || micDenied){ sayLetter(g3Item); return; }
+  if (g3Listening){ stopRecognition(); return; }
+  ensureMic().then(ok => {
+    if (!ok) return;
+    const r = getRecog();
+    if (!r) return;
+    try{
+      g3Listening = true;
+      g3Mic.classList.add("listening");
+      g3Status.textContent = "אני מקשיבה... 🎧 תגידי!";
+      r.start();
+    }catch(e){ g3Listening = false; g3Mic.classList.remove("listening"); }
+  });
+}
+function handleG3Result(alts){
+  g3Listening = false; g3Mic.classList.remove("listening");
+  if (alts.some(a => spokenMatches(g3Item.l, a))){
+    correctG3();
+  } else {
+    const heard = normHeb(alts[0]) || "…";
+    g3Status.textContent = "שמעתי “" + heard + "” — כמעט! נסי שוב 🔁";
+  }
+}
+function correctG3(){
+  const won = addPoint();
+  if (!won){ happySound(); celebrate(); }
+  g3Status.textContent = "כל הכבוד! 🎉";
+  setTimeout(nextGame3, won ? 3400 : 1500);
+}
+g3Mic.onclick = () => { ac(); listenG3(); };
+document.getElementById("g3Hint").onclick = () => { ac(); sayLetter(g3Item); };
+document.getElementById("g3Know").onclick = () => { ac(); stopRecognition(); correctG3(); };
+document.getElementById("g3Skip").onclick = () => { ac(); clickSound(); nextGame3(); };
+
+/* ================= SCORE & TROPHIES ================= */
+const GOAL = 100; // points per trophy
+let points = 0, trophies = 0;
+(function loadScore(){
+  try{
+    points = parseInt(localStorage.getItem("abg_points"), 10) || 0;
+    trophies = parseInt(localStorage.getItem("abg_trophies"), 10) || 0;
+  }catch(e){ points = 0; trophies = 0; }
+  if (points < 0 || points >= GOAL) points = 0;
+  if (trophies < 0) trophies = 0;
+})();
+function saveScore(){
+  try{
+    localStorage.setItem("abg_points", points);
+    localStorage.setItem("abg_trophies", trophies);
+  }catch(e){/* storage may be blocked — score still works in-session */}
+}
+
+const scoreBadge = document.getElementById("scoreBadge");
+const sbPoints   = document.getElementById("sbPoints");
+const sbTrophies = document.getElementById("sbTrophies");
+const menuBadge  = document.getElementById("menuBadge");
+const trCount     = document.getElementById("trCount");
+const trShelf     = document.getElementById("trShelf");
+const trProgLabel = document.getElementById("trProgLabel");
+const trBarFill   = document.getElementById("trBarFill");
+const trPoints    = document.getElementById("trPoints");
+const champEl     = document.getElementById("champ");
+
+function updateScoreUI(doBump){
+  sbPoints.textContent = points;
+  sbTrophies.textContent = trophies;
+  if (menuBadge) menuBadge.textContent = "🏆 " + trophies + " · ⭐ " + points;
+  if (doBump){
+    scoreBadge.classList.remove("bump");
+    void scoreBadge.offsetWidth;
+    scoreBadge.classList.add("bump");
+  }
+  if (document.getElementById("screen-trophies").classList.contains("active")) renderTrophies();
+}
+
+// +1 per success. Returns true if this point completed a trophy (championship).
+function addPoint(){
+  points++;
+  let won = false;
+  if (points >= GOAL){ points = 0; trophies++; won = true; }
+  saveScore();
+  updateScoreUI(true);
+  if (won) championship();
+  return won;
+}
+
+function renderTrophies(){
+  trCount.textContent = trophies === 0 ? "עוד לא אספת גביעים"
+    : (trophies + (trophies === 1 ? " גביע 🏆" : " גביעים 🏆"));
+  trShelf.innerHTML = "";
+  if (trophies === 0){
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "🎯 אספי 100 נקודות לגביע הראשון!";
+    trShelf.appendChild(e);
+  } else {
+    for (let i = 0; i < trophies; i++){
+      const t = document.createElement("div");
+      t.className = "t"; t.textContent = "🏆";
+      t.style.animationDelay = (i % 8) * 0.12 + "s";
+      trShelf.appendChild(t);
+    }
+  }
+  const remain = GOAL - points;
+  trProgLabel.textContent = "עוד " + remain + " נקודות לגביע הבא!";
+  trBarFill.style.width = (points / GOAL * 100) + "%";
+  trPoints.textContent = "⭐ " + points + " / " + GOAL;
+}
+
+function championship(){
+  champEl.classList.remove("show");
+  void champEl.offsetWidth;
+  champEl.classList.add("show");
+  fanfare();
+  confettiBurst();
+  setTimeout(confettiBurst, 450);
+  setTimeout(confettiBurst, 900);
+  setTimeout(() => champEl.classList.remove("show"), 3000);
+}
+function fanfare(){
+  // triumphant little tune
+  const notes = [523, 659, 784, 1047, 784, 1047];
+  notes.forEach((f, i) => tone(f, i * 0.18, 0.22));
+}
+
+/* ================= CELEBRATION ================= */
+const cheerEl = document.getElementById("cheer");
+function celebrate(){
+  cheerEl.textContent = CHEERS[randInt(CHEERS.length)];
+  cheerEl.classList.remove("show");
+  void cheerEl.offsetWidth; // restart animation
+  cheerEl.classList.add("show");
+  setTimeout(() => cheerEl.classList.remove("show"), 1000);
+  confettiBurst();
+}
+
+/* ---- Confetti ---- */
+const canvas = document.getElementById("confetti");
+const ctx = canvas.getContext("2d");
+let confetti = [], rafId = null;
+function resizeCanvas(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+function confettiBurst(){
+  const colors = ["#ff6ba6","#9b5de5","#4cc9f0","#57cc99","#ffd166","#ff924c"];
+  for (let i = 0; i < 90; i++){
+    confetti.push({
+      x: canvas.width / 2, y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * 14,
+      vy: (Math.random() - 0.9) * 14,
+      size: 6 + Math.random() * 8,
+      color: colors[randInt(colors.length)],
+      rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+      life: 90
+    });
+  }
+  if (!rafId) rafId = requestAnimationFrame(drawConfetti);
+}
+function drawConfetti(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  confetti.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.4; p.rot += p.vr; p.life--;
+  });
+  confetti = confetti.filter(p => p.life > 0 && p.y < canvas.height + 40);
+  confetti.forEach(p => {
+    ctx.save();
+    ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+    ctx.restore();
+  });
+  if (confetti.length > 0){
+    rafId = requestAnimationFrame(drawConfetti);
+  } else {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    rafId = null;
+  }
+}
+
+/* ================= INIT ================= */
+updateScoreUI(false);
+</script>
+</body>
+</html>
