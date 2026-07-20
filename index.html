@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<!-- Always fetch the latest version (the app updates often) instead of a stale cached copy. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>הא-ב הקסום 🌈</title>
 <style>
   :root{
@@ -308,7 +312,7 @@
 
 <!-- Real Hebrew voice clips (base64-embedded, works offline). If this file is
      missing the app falls back to the browser's speech engine. -->
-<script src="audio-data.js"></script>
+<script src="audio-data.js?v=3"></script>
 <script>
 "use strict";
 
